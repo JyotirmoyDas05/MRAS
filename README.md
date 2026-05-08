@@ -1,73 +1,189 @@
-# React + TypeScript + Vite
+# MRAS - Medical Records Archival System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based, client-server system for long-term storage and retrieval of medical records from Hospital Information Systems (HIS) and Electronic Health Records (EHR).
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+| Feature | Description |
+|---------|-------------|
+| **Data Ingestion** | Import records from multiple sources (CSV, HL7/FHIR, PDF, scanned images) |
+| **Full-Text Search** | Elasticsearch-powered search with OCR support for scanned documents |
+| **Patient Views** | Consolidated patient history across all source systems |
+| **Role-Based Access** | RBAC with HIM Staff, Clinician, Administrator, Auditor roles |
+| **Retention Policies** | Configurable retention rules with legal purge capability |
+| **Audit Logging** | Complete audit trail for compliance and regulatory requirements |
+| **Reports** | Usage statistics and data volume analytics |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
+| Backend | Node.js + Express + TypeScript |
+| Database | PostgreSQL (metadata, users, audit logs) |
+| Search | Elasticsearch (full-text search, OCR indexing) |
+| Storage | MinIO S3-compatible (document blobs) |
+| OCR | Tesseract.js |
+| Container | Docker + Docker Compose |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 18+
+- Docker and Docker Compose
+- PostgreSQL client (optional, for direct DB access)
+
+---
+
+## Quick Start
+
+### 1. Start Infrastructure Services
+
+```bash
+cd docker
+docker-compose up -d
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This starts:
+- **PostgreSQL** on port `5432` (user: `mras_user`, password: `mras_password`)
+- **Elasticsearch** on port `9200`
+- **MinIO** on port `9000` (console: `9001`, user: `minioadmin`, password: `minioadmin`)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 2. Backend Setup
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm run dev
 ```
+
+Backend runs on `http://localhost:3000`
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs on `http://localhost:5173`
+
+---
+
+## Project Structure
+
+```
+MRAS/
+├── backend/               # Express API server
+│   ├── src/
+│   │   ├── controllers/   # Route handlers
+│   │   ├── services/      # Business logic
+│   │   ├── models/        # Database models (TypeORM)
+│   │   ├── middleware/    # Auth, RBAC, validation
+│   │   ├── routes/        # API routes
+│   │   └── utils/         # OCR, file handling
+│   ├── migrations/        # Database migrations
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/               # React application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Page-level components
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── services/      # API calls (axios)
+│   │   ├── types/         # TypeScript interfaces
+│   │   └── context/       # React context (auth)
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── tailwind.config.js
+│
+├── docker/                # Docker configurations
+│   └── docker-compose.yml # PostgreSQL, Elasticsearch, MinIO
+│
+├── docs/                  # Documentation
+│   ├── API.md            # API documentation
+│   ├── DEPLOY.md         # Deployment guide
+│   └── USER_MANUAL.md    # User guide
+│
+├── PLAN.md               # Development plan
+├── SRS.md                # Requirements specification
+└── README.md             # This file
+```
+
+---
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
+
+### Patients
+- `GET /api/patients/:id` - Get patient details
+- `GET /api/patients/:id/documents` - Get patient's documents
+
+### Documents
+- `GET /api/documents` - List documents (paginated)
+- `GET /api/documents/:id` - Get document metadata
+- `GET /api/documents/:id/content` - Get document binary
+- `POST /api/documents/export` - Export documents (ROI)
+
+### Search
+- `GET /api/search` - Full-text search
+
+### Administration
+- `GET/POST /api/admin/users` - User management
+- `GET/POST /api/admin/data-sources` - Data source config
+- `GET /api/admin/status` - System status
+
+---
+
+## Development Phases
+
+| Phase | Duration | Focus |
+|-------|----------|-------|
+| Phase 1 | 2 weeks | Project setup, auth |
+| Phase 2 | 2 weeks | Data import pipeline |
+| Phase 3 | 2 weeks | Search system |
+| Phase 4 | 1 week | Patient views |
+| Phase 5 | 2 weeks | Security, RBAC |
+| Phase 6 | 2 weeks | Retention policies |
+| Phase 7 | 1 week | Reports |
+| Phase 8 | 2 weeks | Testing, polish |
+
+---
+
+## Security Features
+
+- JWT-based authentication
+- Role-based access control (RBAC)
+- HTTPS only (TLS)
+- Data at rest encryption
+- Complete audit logging
+- Sensitive record marking
+
+---
+
+## Team
+
+| Name | Roll Number |
+|------|-------------|
+| Jyotirmoy Das | 240103002 |
+| Dhrisit Mazumdar | 240103007 |
+| Bhairab Kumar Mahanta | 240103011 |
+| Jyotishman Kumar | 240103029 |
+
+---
+
+## License
+
+MIT
